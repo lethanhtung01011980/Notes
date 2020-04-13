@@ -1,0 +1,4 @@
+Ref: 
+metasploit https://exp1o1t9r.com/2020/01/28/hackthebox-granny-writeup/
+
+Must use MSF. Skip

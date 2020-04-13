@@ -1,0 +1,4 @@
+https://www.securezombie.com/post/hack-the-box-write-up-legacy
+https://0xdf.gitlab.io/2019/02/21/htb-legacy.html
+https://0xw0lf.github.io//posts/HTB-Legacy
+

